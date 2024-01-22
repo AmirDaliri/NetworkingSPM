@@ -58,7 +58,7 @@ public class ApiRequest: ServiceProtocol {
     ///   - responseModel: The type of object to decode the response into.
     ///   - headers: Optional HTTP headers to include in the request.
     /// - Returns: A publisher that emits the decoded object or an error.
-    public func fetchObject<T: Codable>(_ url: URL, _ method: HTTPMethod, _ parameters: [String: Any], _ responseModel: T.Type, _ headers: HTTPHeaders) -> AnyPublisher<T, Error> {
+    public func fetchObject<T: Codable>(_ url: URL, _ method: HTTPMethod, _ parameters: [String: Any]? = nil, _ responseModel: T.Type, _ headers: HTTPHeaders) -> AnyPublisher<T, Error> {
         
         guard let reachabilityManager = reachabilityManager, reachabilityManager.isReachable else {
             return Fail(error: URLError(.notConnectedToInternet)).eraseToAnyPublisher()
