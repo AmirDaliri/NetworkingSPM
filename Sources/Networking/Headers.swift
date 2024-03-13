@@ -8,20 +8,37 @@
 import Alamofire
 
 public struct Headers {
-    static func refresh(token: String) -> HTTPHeaders {
+    
+    // Common headers
+    public static func commonHeaders() -> HTTPHeaders {
         return [
             "Content-Type": "application/json",
-            "Authorization": "bearer \(token)"
+            "LGKWT": HeaderSecretGenerator.shared.generateTokenSecret(),
+            "LUA": HeaderSecretGenerator.shared.getUserAgent(),
+            "LUP": HeaderSecretGenerator.shared.getIPAddress(),
+            "LUD": HeaderSecretGenerator.shared.getUniqueDeviceId(),
+            "LUDT": "IOS"
         ]
     }
     
-    public static let withoutToken: HTTPHeaders = ["Content-Type": "application/json"]
+    // Headers without token
+    public static let withoutToken: HTTPHeaders = commonHeaders()
     
+    // Headers with token
     public static func withToken(token: String) -> HTTPHeaders {
-        return refresh(token: token)
+        var headers = commonHeaders()
+        headers["Authorization"] = "bearer \(token)"
+        return headers
+    }
+    
+    // Refresh token
+    static func refresh(token: String) -> HTTPHeaders {
+        var headers = withToken(token: token)
+        headers["LGKWT"] = HeaderSecretGenerator.shared.generateTokenSecret()
+        return headers
     }
 }
 
 extension HTTPHeaders {
-    public static let withoutoken: HTTPHeaders = ["Content-Type":"application/json"]
+    public static let withoutoken: HTTPHeaders = Headers.withoutToken
 }
