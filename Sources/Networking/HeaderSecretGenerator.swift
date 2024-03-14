@@ -12,22 +12,38 @@ import Foundation
 import CoreTelephony
 import SystemConfiguration
 
-public class HeaderSecretGenerator {
-    
-    /// Singleton instance for `HeaderSecretGenerator`.
-    static let shared = HeaderSecretGenerator.init()
-    /// The secret token string used for generating header secrets.
-    private let tokenSecret: String
-    
-    /// Initializes a new instance of `HeaderSecretGenerator`.
-    init() {
-        self.tokenSecret = "@D9Y@Ypu$@F39a@MaW*9@HvK"
-    }
+/// Protocol defining the necessary functionalities for generating secret headers.
+public protocol HeaderSecretGeneratorProtocol {
+    /// Generates a secret header string with embedded current timestamp and device information.
+    /// - Returns: A secret header string hashed using MD5.
+    func generateTokenSecret() -> String
 
-    /// Generates a secret header with timestamp and device information.
-    ///
-    /// - Returns: A secret header string.
-    func generateTokenSecret() -> String {
+    /// Retrieves the device's current IP address.
+    /// - Returns: A string representation of the IP address.
+    func getIPAddress() -> String
+
+    /// Constructs a user agent string that includes device name, OS version, and network type.
+    /// - Returns: A user agent string.
+    func getUserAgent() -> String
+
+    /// Fetches a unique identifier for the device.
+    /// - Returns: A UUID string representing the device identifier.
+    func getUniqueDeviceId() -> String
+}
+
+
+public struct HeaderSecretGenerator: HeaderSecretGeneratorProtocol {
+    
+    /// Static instance similar to a singleton pattern for struct.
+    static let shared = HeaderSecretGenerator()
+    
+    /// The secret token string used as the base for generating header secrets.
+    private let tokenSecret: String = "@D9Y@Ypu$@F39a@MaW*9@HvK"
+    
+    /// Generates a secret header string with current timestamp and device information.
+    /// - Returns: A secret header string, MD5 hashed and uppercased.
+    public func generateTokenSecret() -> String {
+        
         var generatedTokenSecret = tokenSecret
         
         let formatter = DateFormatter()
@@ -42,7 +58,6 @@ public class HeaderSecretGenerator {
         print(month)
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@M", with: month)
         
-        
         formatter.dateFormat = "dd"
         let day = formatter.string(from: currentDate)
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@D", with: "\(day)")
@@ -52,48 +67,35 @@ public class HeaderSecretGenerator {
         let hour = formatter.string(from: currentDate)
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@H", with: "\(hour)")
         
-        
         formatter.dateFormat = "mm"
         let minute = formatter.string(from: currentDate)
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@F", with: "\(minute)")
-        print("before hash", generatedTokenSecret)
-        // Convert generatedTokenSecret to MD5 hash
         
+        // Convert generatedTokenSecret to MD5 hash
         let hashedToken = createMD5Hash(generatedTokenSecret)
-        print("after hash", hashedToken.uppercased())
+        
         return hashedToken.uppercased()
+        
     }
-
-    /// Creates an MD5 hash from the given value.
-    ///
-    /// - Parameter value: The string value to hash.
-    /// - Returns: The MD5 hash string.
-    private func createMD5Hash(_ value: String) -> String {
-        guard let data = value.data(using: .utf8) else { return "" }
-        let hash = Insecure.MD5.hash(data: data)
-        return hash.map { String(format: "%02hhx", $0) }.joined()
-    }
-
     
-    /// Gets the IP address of the device.
-    ///
-    /// - Returns: The IP address string.
-    func getIPAddress() -> String {
+    /// Retrieves the current IP address of the device.
+    /// - Returns: The device's IP address in string format, or an empty string if not found.
+    public func getIPAddress() -> String {
         var address: String?
         var ifaddr: UnsafeMutablePointer<ifaddrs>? = nil
         if getifaddrs(&ifaddr) == 0 {
             var ptr = ifaddr
             while ptr != nil {
                 defer { ptr = ptr?.pointee.ifa_next }
-
+                
                 guard let interface = ptr?.pointee else { return "" }
                 let addrFamily = interface.ifa_addr.pointee.sa_family
                 if addrFamily == UInt8(AF_INET) || addrFamily == UInt8(AF_INET6) {
-
+                    
                     // wifi = ["en0"]
                     // wired = ["en2", "en3", "en4"]
                     // cellular = ["pdp_ip0","pdp_ip1","pdp_ip2","pdp_ip3"]
-
+                    
                     let name: String = String(cString: (interface.ifa_name))
                     if  name == "en0" || name == "en2" || name == "en3" || name == "en4" || name == "pdp_ip0" || name == "pdp_ip1" || name == "pdp_ip2" || name == "pdp_ip3" {
                         var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
@@ -107,31 +109,26 @@ public class HeaderSecretGenerator {
         return address ?? ""
     }
     
-    /// Gets the user agent string of the device.
-    ///
-    /// - Returns: The user agent string.
-    func getUserAgent() -> String {
+    /// Constructs a user agent string from the device's name, OS version, and network connection type.
+    /// - Returns: A detailed user agent string.
+    public func getUserAgent() -> String {
         let name = Device.current.name ?? ""
         let iOS = (Device.current.systemName ?? "") + " " + (Device.current.systemVersion ?? "")
-        let network = "NetworkType: " + HeaderSecretGenerator.getConnectionType()
+        let network = "NetworkType: " + getConnectionType()
         
         return name + ", " + iOS + ", " + network
     }
     
-    /// Gets the unique device identifier.
-    ///
-    /// - Returns: The unique device identifier string.
-    func getUniqueDeviceId() -> String {
-        return UIDevice.current.identifierForVendor?.uuidString ?? "null"
+    /// Fetches the device's unique identifier.
+    /// - Returns: A string containing the UUID of the device or "null" if unavailable.
+    public func getUniqueDeviceId() -> String {
+        UIDevice.current.identifierForVendor?.uuidString ?? "null"
     }
-}
-
-// MARK: - Connection Type Method
-extension HeaderSecretGenerator {
-    /// Gets the type of network connection.
-    ///
-    /// - Returns: The type of network connection.
-    class func getConnectionType() -> String {
+    
+    /// Determines the device's current network connection type.
+    /// This method is now private and not part of the protocol.
+    /// - Returns: A string indicating the type of network connection (e.g., "NO INTERNET", "WIFI").
+    private func getConnectionType() -> String {
         guard let reachability = SCNetworkReachabilityCreateWithName(kCFAllocatorDefault, "www.google.com") else {
             return "NO INTERNET"
         }
@@ -165,5 +162,15 @@ extension HeaderSecretGenerator {
         } else {
             return "NO INTERNET"
         }
+
+    }
+    
+    /// Generates an MD5 hash from a given string.
+    /// - Parameter value: The string to hash.
+    /// - Returns: An MD5 hash of the input string.
+    private func createMD5Hash(_ value: String) -> String {
+        guard let data = value.data(using: .utf8) else { return "" }
+        let hash = Insecure.MD5.hash(data: data)
+        return hash.map { String(format: "%02hhx", $0) }.joined()
     }
 }
