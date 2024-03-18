@@ -22,7 +22,9 @@ public struct Headers {
     }
     
     // Headers without token
-    public static let withoutToken: HTTPHeaders = commonHeaders()
+    public static func withoutToken() -> HTTPHeaders {
+        commonHeaders()
+    }
     
     // Headers with token
     public static func withToken(token: String) -> HTTPHeaders {
@@ -30,15 +32,4 @@ public struct Headers {
         headers["Authorization"] = "bearer \(token)"
         return headers
     }
-    
-    // Refresh token
-    static func refresh(token: String) -> HTTPHeaders {
-        var headers = withToken(token: token)
-        headers["LGKWT"] = HeaderSecretGenerator.shared.generateTokenSecret()
-        return headers
-    }
-}
-
-extension HTTPHeaders {
-    public static let withoutoken: HTTPHeaders = Headers.withoutToken
 }
