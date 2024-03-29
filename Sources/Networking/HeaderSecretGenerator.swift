@@ -49,6 +49,13 @@ public struct HeaderSecretGenerator: HeaderSecretGeneratorProtocol {
         let formatter = DateFormatter()
         let currentDate = Date()
         
+        /// Turkey time zone
+        if let timeZone = TimeZone(identifier: "Europe/Istanbul") {
+            formatter.timeZone = timeZone
+        } else {
+            formatter.timeZone = TimeZone(secondsFromGMT: 3 * 3600)
+        }
+
         formatter.dateFormat = "yyyy"
         let year = formatter.string(from: currentDate)
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@Y", with: "\(year)")
@@ -63,7 +70,6 @@ public struct HeaderSecretGenerator: HeaderSecretGeneratorProtocol {
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@D", with: "\(day)")
         
         formatter.dateFormat = "HH"
-        formatter.timeZone = NSTimeZone.init(abbreviation: "UTC") as TimeZone?
         let hour = formatter.string(from: currentDate)
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@H", with: "\(hour)")
         
