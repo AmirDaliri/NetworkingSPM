@@ -47,15 +47,9 @@ public struct HeaderSecretGenerator: HeaderSecretGeneratorProtocol {
         var generatedTokenSecret = tokenSecret
         
         let formatter = DateFormatter()
+        formatter.timeZone = TimeZone.current
         let currentDate = Date()
         
-        /// Turkey time zone
-        if let timeZone = TimeZone(identifier: "Europe/Istanbul") {
-            formatter.timeZone = timeZone
-        } else {
-            formatter.timeZone = TimeZone(secondsFromGMT: 3 * 3600)
-        }
-
         formatter.dateFormat = "yyyy"
         let year = formatter.string(from: currentDate)
         generatedTokenSecret = generatedTokenSecret.replacingOccurrences(of: "@Y", with: "\(year)")
