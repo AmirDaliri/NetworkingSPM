@@ -47,7 +47,12 @@ public struct HeaderSecretGenerator: HeaderSecretGeneratorProtocol {
         var generatedTokenSecret = tokenSecret
         
         let formatter = DateFormatter()
-        formatter.timeZone = TimeZone.current
+//        formatter.timeZone = TimeZone.current
+        if let timeZone = TimeZone(identifier: "Europe/Istanbul") {
+            formatter.timeZone = timeZone
+        } else {
+            formatter.timeZone = TimeZone(secondsFromGMT: 3 * 3600)
+        }
         let currentDate = Date()
         
         formatter.dateFormat = "yyyy"
