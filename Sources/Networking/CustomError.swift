@@ -8,7 +8,7 @@
 import Foundation
 
 public enum CustomError: Error {
-    case apiError(String)
+    case apiError(String, Int?)
     case contractUpdateNeeded
     case logoutRequired
 }
