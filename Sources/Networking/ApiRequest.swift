@@ -69,7 +69,7 @@ public class ApiRequest: ServiceProtocol {
             .publishData()
             .tryMap { [weak self] response in
                 guard let self = self else {
-                    throw CustomError.apiError("ServiceFetcher instance is nil")
+                    throw CustomError.apiError("ServiceFetcher instance is nil", nil)
                 }
                 
                 // Check if the response indicates unauthorized access
@@ -92,12 +92,13 @@ public class ApiRequest: ServiceProtocol {
         } else if genericData.resultCode == NetworkConstants.contractUpdateCode {
             // Handle the contract update case
             throw CustomError.contractUpdateNeeded
-        } else if let msg = genericData.resultMessage {
+        } else if let msg = genericData.resultMessage,
+                  let statusCode = genericData.resultCode {
             // Handle other API-specific error messages
-            throw CustomError.apiError(msg)
+            throw CustomError.apiError(msg, statusCode)
         } else {
             // Handle generic API error
-            throw CustomError.apiError("An unknown error occurred")
+            throw CustomError.apiError("An unknown error occurred", nil)
         }
     }
     
