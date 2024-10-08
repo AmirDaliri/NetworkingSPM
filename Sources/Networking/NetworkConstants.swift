@@ -8,7 +8,7 @@
 import Foundation
 
 struct NetworkConstants {
-    static let internetUnavailableMessage = "Lütfen internet bağlantınızı kontrol edin."
+    static let internetUnavailableMessage = String.localizedStringWithFormat("No internet connection. Please check your connection and try again.")
     static let contractUpdateCode = 9000
     static let unauthorizedCode = 401
 }
